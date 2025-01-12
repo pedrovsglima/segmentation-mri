@@ -5,6 +5,7 @@ import pandas as pd
 import pydicom
 import SimpleITK as sitk
 
+from extract_tumor_mask import thresholded_mask
 
 def map_new_paths(mapping_file):
     """Return dictionary of patients and their corresponding paths for 'post_1' images."""
@@ -76,6 +77,9 @@ def create_3d_mask_from_dicom(dicom_folder, annotation, output_path):
     mask_array = np.zeros_like(image_array)
 
     mask_array[start_slice:end_slice, start_row:end_row, start_column:end_column] = 1
+
+    # apply a threshold within the bbox to get the tumor mask
+    mask_array = thresholded_mask(image_array, mask_array, lower_limit=0.5, upper_limit=0.75)
 
     mask_image = sitk.GetImageFromArray(mask_array)
 
