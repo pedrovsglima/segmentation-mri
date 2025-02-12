@@ -24,7 +24,7 @@ def volume_to_numpy(dicom_folder, output_path):
 def volume_and_seg_to_numpy(dicom_folder, seg_path, output_path, patient_id):
     """Converts MRI volume and segmentation data to NumPy arrays and saves them to specified output paths."""
     # read MRI images
-    image_array, _, nrrd_breast_data, nrrd_dv_data = preprocessing.read_precontrast_mri_and_segmentation(
+    image_array, _, nrrd_breast_data, _ = preprocessing.read_precontrast_mri_and_segmentation(
         dicom_folder,
         seg_path
     )
@@ -32,12 +32,12 @@ def volume_and_seg_to_numpy(dicom_folder, seg_path, output_path, patient_id):
     # create directory if it doesn't exist
     output_path_volume = f"{output_path}/mri_npy/{patient_id}/{patient_id}.npy"
     output_path_breast = f"{output_path}/mri_npy_seg/{patient_id}/Segmentation_{patient_id}_Breast.npy"
-    output_path_dv = f"{output_path}/mri_npy_seg/{patient_id}/Segmentation_{patient_id}_Dense_and_Vessels.npy"
+    # output_path_dv = f"{output_path}/mri_npy_seg/{patient_id}/Segmentation_{patient_id}_Dense_and_Vessels.npy"
 
     output_dirs = [
         os.path.dirname(output_path_volume),
         os.path.dirname(output_path_breast),
-        os.path.dirname(output_path_dv)
+        # os.path.dirname(output_path_dv)
     ]
     for dir in output_dirs:
         os.makedirs(dir, exist_ok=True)
@@ -45,7 +45,7 @@ def volume_and_seg_to_numpy(dicom_folder, seg_path, output_path, patient_id):
     # save arrays as .npy files
     np.save(output_path_volume, image_array)
     np.save(output_path_breast, nrrd_breast_data)
-    np.save(output_path_dv, nrrd_dv_data)
+    # np.save(output_path_dv, nrrd_dv_data)
 
 if __name__ == "__main__":
 

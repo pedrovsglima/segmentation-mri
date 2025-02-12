@@ -250,9 +250,12 @@ def read_precontrast_mri_and_segmentation(
 
     # Read in dense_and_vessels (abbreviated dv) data
     # Header is used to properly write classes
-    nrrd_dv_data, nrrd_header = nrrd.read(
-        segmentation_dir+'/Segmentation_{}_Dense_and_Vessels.seg.nrrd'.format(subject_id)
-    )
+
+    ## UPDATE: Ignoring dv data, some patients have a shape mismatch
+    nrrd_dv_data = np.zeros((1, 1, 1))
+    ## nrrd_dv_data, nrrd_header = nrrd.read(
+    ##     segmentation_dir+'/Segmentation_{}_Dense_and_Vessels.seg.nrrd'.format(subject_id)
+    ## )
 
     # For dense and vessels one more step needs to be taken.
     # Since the order of the dense and vessels may be incorrect,
@@ -263,100 +266,108 @@ def read_precontrast_mri_and_segmentation(
     # One is where they simply have the wrong values.
     # Another is when the volume has two layers. 
 
-    if len(nrrd_dv_data.shape) == 3:
-
-        # First check to see if everything is correct
-        if (
-            nrrd_header['Segment0_Name'] == 'Vessels' and 
-            nrrd_header['Segment1_Name'] == 'Dense' and
-            nrrd_header['Segment0_LabelValue'] == '1' and
-            nrrd_header['Segment1_LabelValue'] == '2'
-        ):
-            pass
-
-        else:
-            if nrrd_header['Segment0_Name'] == 'Vessels':
-                original_vessels_label = \
-                    int(nrrd_header['Segment0_LabelValue'])
-                original_dense_label = \
-                    int(nrrd_header['Segment1_LabelValue'])
-            else:
-                original_vessels_label = \
-                    int(nrrd_header['Segment1_LabelValue'])
-                original_dense_label = \
-                    int(nrrd_header['Segment0_LabelValue'])
-
-            # Start by changing the vessel label to a high number, then
-            # fix all values. This is to prevent an incorrect np.where
-            # statement. 
-            nrrd_dv_data = np.where(
-                nrrd_dv_data == original_vessels_label, 
-                50, nrrd_dv_data
-            )
-            nrrd_dv_data = np.where(
-                nrrd_dv_data == original_dense_label, 
-                2, nrrd_dv_data
-            )
-            nrrd_dv_data = np.where(
-                nrrd_dv_data == 50, 
-                1, nrrd_dv_data
-            )
-
-    else:
-        # There are two layers in the data. 
-        if nrrd_header['Segment0_Name'] == 'Vessels':
-            vessel_layer = int(nrrd_header['Segment0_Layer'])
-            vessel_label = int(nrrd_header['Segment0_LabelValue'])
-            dense_layer = int(nrrd_header['Segment1_Layer'])
-            dense_label = int(nrrd_header['Segment1_LabelValue'])
-        else:
-            vessel_layer = int(nrrd_header['Segment1_Layer'])
-            vessel_label = int(nrrd_header['Segment1_LabelValue'])
-            dense_layer = int(nrrd_header['Segment0_Layer'])
-            dense_label = int(nrrd_header['Segment0_LabelValue'])
-        
-        vessel_array = nrrd_dv_data[vessel_layer, :, :, :]
-        dense_array = nrrd_dv_data[dense_layer, :, :, :]
-
-        # Change the values of them to match what we want
-        vessel_array = np.where(
-            vessel_array == vessel_label, 1, vessel_array
-        )
-        dense_array = np.where(
-            dense_array == dense_label, 2, dense_array
-        )
-
-        nrrd_dv_data = vessel_array + dense_array
-
-        # Might be some overlap; we'll change that into dense
-        nrrd_dv_data = np.where(
-            nrrd_dv_data == 3, 2, nrrd_dv_data
-        )
-
-    assert (np.unique(nrrd_dv_data) == np.array([0, 1, 2])).all(), \
-        "{} dense/vessel array has incorrect values".format(subject_id)
-
-    assert (image_array.shape == nrrd_breast_data.shape) and \
-        (image_array.shape == nrrd_dv_data.shape), \
+    ## if len(nrrd_dv_data.shape) == 3:
+    ##
+    ##     # First check to see if everything is correct
+    ##     if (
+    ##         nrrd_header['Segment0_Name'] == 'Vessels' and 
+    ##         nrrd_header['Segment1_Name'] == 'Dense' and
+    ##         nrrd_header['Segment0_LabelValue'] == '1' and
+    ##         nrrd_header['Segment1_LabelValue'] == '2'
+    ##     ):
+    ##         pass
+    ##
+    ##     else:
+    ##         if nrrd_header['Segment0_Name'] == 'Vessels':
+    ##             original_vessels_label = \
+    ##                 int(nrrd_header['Segment0_LabelValue'])
+    ##             original_dense_label = \
+    ##                 int(nrrd_header['Segment1_LabelValue'])
+    ##         else:
+    ##             original_vessels_label = \
+    ##                 int(nrrd_header['Segment1_LabelValue'])
+    ##             original_dense_label = \
+    ##                 int(nrrd_header['Segment0_LabelValue'])
+    ##
+    ##         # Start by changing the vessel label to a high number, then
+    ##         # fix all values. This is to prevent an incorrect np.where
+    ##         # statement. 
+    ##         nrrd_dv_data = np.where(
+    ##             nrrd_dv_data == original_vessels_label, 
+    ##             50, nrrd_dv_data
+    ##         )
+    ##         nrrd_dv_data = np.where(
+    ##             nrrd_dv_data == original_dense_label, 
+    ##             2, nrrd_dv_data
+    ##         )
+    ##         nrrd_dv_data = np.where(
+    ##             nrrd_dv_data == 50, 
+    ##             1, nrrd_dv_data
+    ##         )
+    ##
+    ## else:
+    ##     # There are two layers in the data. 
+    ##     if nrrd_header['Segment0_Name'] == 'Vessels':
+    ##         vessel_layer = int(nrrd_header['Segment0_Layer'])
+    ##         vessel_label = int(nrrd_header['Segment0_LabelValue'])
+    ##         dense_layer = int(nrrd_header['Segment1_Layer'])
+    ##         dense_label = int(nrrd_header['Segment1_LabelValue'])
+    ##     else:
+    ##         vessel_layer = int(nrrd_header['Segment1_Layer'])
+    ##         vessel_label = int(nrrd_header['Segment1_LabelValue'])
+    ##         dense_layer = int(nrrd_header['Segment0_Layer'])
+    ##         dense_label = int(nrrd_header['Segment0_LabelValue'])
+    ##
+    ##     vessel_array = nrrd_dv_data[vessel_layer, :, :, :]
+    ##     dense_array = nrrd_dv_data[dense_layer, :, :, :]
+    ##
+    ##     # Change the values of them to match what we want
+    ##     vessel_array = np.where(
+    ##         vessel_array == vessel_label, 1, vessel_array
+    ##     )
+    ##     dense_array = np.where(
+    ##         dense_array == dense_label, 2, dense_array
+    ##     )
+    ##
+    ##     nrrd_dv_data = vessel_array + dense_array
+    ##
+    ##     # Might be some overlap; we'll change that into dense
+    ##     nrrd_dv_data = np.where(
+    ##         nrrd_dv_data == 3, 2, nrrd_dv_data
+    ##     )
+    ##
+    ## assert (np.unique(nrrd_dv_data) == np.array([0, 1, 2])).all(), \
+    ##     "{} dense/vessel array has incorrect values".format(subject_id)
+    ##
+    ## assert (image_array.shape == nrrd_breast_data.shape) and \
+    ##     (image_array.shape == nrrd_dv_data.shape), \
+    ##     """"Subject {}: Shape mismatch between arrays.
+    ##     Image, breast, dv shapes: {}, {}, {}
+    ##     """.format(
+    ##         subject_id, 
+    ##         image_array.shape,
+    ##         nrrd_breast_data.shape, 
+    ##         nrrd_dv_data.shape
+    ##     )
+    assert (image_array.shape == nrrd_breast_data.shape), \
         """"Subject {}: Shape mismatch between arrays.
-        Image, breast, dv shapes: {}, {}, {}
+        Image, breast shapes: {}, {}
         """.format(
             subject_id, 
             image_array.shape,
             nrrd_breast_data.shape, 
-            nrrd_dv_data.shape
         )
 
     # All nrrd data needs to be rotated/flipped
     # Some require additional flipping/rotation using criteria below
     nrrd_breast_data = np.flip(np.rot90(nrrd_breast_data), axis=1)
-    nrrd_dv_data = np.flip(np.rot90(nrrd_dv_data), axis=1)
+    ## nrrd_dv_data = np.flip(np.rot90(nrrd_dv_data), axis=1)
         
     # Rotate if inferior and superior are flipped
     if first_image_position > second_image_position:
         image_array = np.rot90(image_array, 2, (1, 2))
         nrrd_breast_data = np.flip(nrrd_breast_data, axis=1)
-        nrrd_dv_data = np.flip(nrrd_dv_data, axis=1)
+        ## nrrd_dv_data = np.flip(nrrd_dv_data, axis=1)
         
     # For patients in a certain orentation, also need to flip in another axis
     # This is the same in all dicom files so we can just use the last
@@ -365,7 +376,7 @@ def read_precontrast_mri_and_segmentation(
         image_array = np.rot90(image_array, 2)
     else:
         nrrd_breast_data = np.rot90(nrrd_breast_data, 2)
-        nrrd_dv_data = np.rot90(nrrd_dv_data, 2)
+        ## nrrd_dv_data = np.rot90(nrrd_dv_data, 2)
 
     return image_array, dicom_data, nrrd_breast_data, nrrd_dv_data
 
