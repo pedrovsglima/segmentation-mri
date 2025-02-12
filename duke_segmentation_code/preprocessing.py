@@ -157,11 +157,17 @@ def read_precontrast_mri(full_sequence_dir):
     return image_array, dicom_data
 
 def read_precontrast_mri_and_segmentation(
-    subject_id, 
-    tcia_data_dir, 
-    fpath_mapping_df,
+    full_sequence_dir,
     segmentation_dir
 ):
+# def read_precontrast_mri_and_segmentation(
+#     subject_id, 
+#     tcia_data_dir, 
+#     fpath_mapping_df,
+#     segmentation_dir
+# ):
+# UPDATE: Commenting out the above code because it will not be used anymmore
+# since we are passing the full sequence dir directly to the function
     """
     Reads in the precontrast MRI data given a subject ID. 
     This function also aligns the patient orientation so the patient's body
@@ -196,19 +202,21 @@ def read_precontrast_mri_and_segmentation(
         Segmentation data from .nrrd.seg file after proper orientation
 
     """
-    tcia_data_dir = Path(tcia_data_dir)
-    segmentation_dir = Path(segmentation_dir)
-
-    # Get the sequence dir from the DataFrame
-    sequence_dir = fpath_mapping_df.loc[
-        fpath_mapping_df['subject_id'] == subject_id, 'precontrast_dir'
-    ].iloc[0]
-
-    # There's also a subdir for every subject that contains the sequences
-    # There is only one of these
-    sub_dir = os.listdir(tcia_data_dir / subject_id)[0]
-
-    full_sequence_dir = tcia_data_dir / subject_id / sub_dir / sequence_dir
+    ## tcia_data_dir = Path(tcia_data_dir)
+    ## 
+    ## # Get the sequence dir from the DataFrame
+    ## sequence_dir = fpath_mapping_df.loc[
+    ##     fpath_mapping_df['subject_id'] == subject_id, 'precontrast_dir'
+    ## ].iloc[0]
+    ## 
+    ## # There's also a subdir for every subject that contains the sequences
+    ## # There is only one of these
+    ## sub_dir = os.listdir(tcia_data_dir / subject_id)[0]
+    ## 
+    ## full_sequence_dir = tcia_data_dir / subject_id / sub_dir / sequence_dir
+    ##
+    ## UPDATE: Commenting out the above code because it will not be used anymmore
+    ## since we are passing the full sequence dir directly to the function
 
     # Now we can iterate through the files in the sequence dir and reach each
     # of them into a numpy array
@@ -221,7 +229,7 @@ def read_precontrast_mri_and_segmentation(
     second_image_position = 0
 
     for i in range(len(dicom_file_list)):
-        dicom_data = pydicom.dcmread(full_sequence_dir / dicom_file_list[i])
+        dicom_data = pydicom.dcmread(full_sequence_dir+"/"+dicom_file_list[i])
         
         if i == 0:
             first_image_position = dicom_data[0x20, 0x32].value[-1]
@@ -233,18 +241,17 @@ def read_precontrast_mri_and_segmentation(
     # Stack in numpy array
     image_array = np.stack(dicom_data_list, axis=-1)
 
+    ## UPDATE: Changing the code below because we receive the full segmentation dir
+    subject_id = segmentation_dir.split('/')[-1]
     # Read in breast_nrrd data
     nrrd_breast_data, _ = nrrd.read(
-        segmentation_dir / '{}/Segmentation_{}_Breast.seg.nrrd'.format(
-            subject_id, subject_id)
+        segmentation_dir+'/Segmentation_{}_Breast.seg.nrrd'.format(subject_id)
     )
 
     # Read in dense_and_vessels (abbreviated dv) data
     # Header is used to properly write classes
     nrrd_dv_data, nrrd_header = nrrd.read(
-        segmentation_dir / \
-            '{}/Segmentation_{}_Dense_and_Vessels.seg.nrrd'.format(
-                subject_id, subject_id)
+        segmentation_dir+'/Segmentation_{}_Dense_and_Vessels.seg.nrrd'.format(subject_id)
     )
 
     # For dense and vessels one more step needs to be taken.
