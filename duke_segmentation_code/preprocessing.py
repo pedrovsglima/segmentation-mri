@@ -70,11 +70,14 @@ def clean_filepath_filename_mapping_csv(filepath_filename_csv_path):
 
     return fpath_mapping_df
 
-def read_precontrast_mri(
-    subject_id, 
-    tcia_data_dir, 
-    fpath_mapping_df
-):
+def read_precontrast_mri(full_sequence_dir):
+# def read_precontrast_mri(
+#     subject_id, 
+#     tcia_data_dir, 
+#     fpath_mapping_df
+# ):
+# UPDATE: Commenting out the above code because it will not be used anymmore
+# since we are passing the full sequence dir directly to the function
     """
     Reads in the precontrast MRI data given a subject ID. 
     This function also aligns the patient orientation so the patient's body
@@ -101,18 +104,22 @@ def read_precontrast_mri(
         such as pixel spacing, image orientation, etc. 
 
     """
-    tcia_data_dir = Path(tcia_data_dir)
 
-    # Get the sequence dir from the DataFrame
-    sequence_dir = fpath_mapping_df.loc[
-        fpath_mapping_df['subject_id'] == subject_id, 'precontrast_dir'
-    ].iloc[0]
-
-    # There's also a subdir for every subject that contains the sequences
-    # There is only one of these
-    sub_dir = os.listdir(tcia_data_dir / subject_id)[0]
-
-    full_sequence_dir = tcia_data_dir / subject_id / sub_dir / sequence_dir
+    ## tcia_data_dir = Path(tcia_data_dir)
+    ##
+    ## # Get the sequence dir from the DataFrame
+    ## sequence_dir = fpath_mapping_df.loc[
+    ##     fpath_mapping_df['subject_id'] == subject_id, 'precontrast_dir'
+    ## ].iloc[0]
+    ##
+    ## # There's also a subdir for every subject that contains the sequences
+    ## # There is only one of these
+    ## sub_dir = os.listdir(tcia_data_dir / subject_id)[0]
+    ##
+    ## full_sequence_dir = tcia_data_dir / subject_id / sub_dir / sequence_dir
+    ##
+    ## UPDATE: Commenting out the above code because it will not be used anymmore
+    ## since we are passing the full sequence dir directly to the function
 
     # Now we can iterate through the files in the sequence dir and reach each
     # of them into a numpy array
@@ -125,7 +132,7 @@ def read_precontrast_mri(
     second_image_position = 0
 
     for i in range(len(dicom_file_list)):
-        dicom_data = pydicom.dcmread(full_sequence_dir / dicom_file_list[i])
+        dicom_data = pydicom.dcmread(full_sequence_dir+"/"+dicom_file_list[i])
         
         if i == 0:
             first_image_position = dicom_data[0x20, 0x32].value[-1]
