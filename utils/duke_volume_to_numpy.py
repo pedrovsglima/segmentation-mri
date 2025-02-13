@@ -30,7 +30,7 @@ def volume_and_seg_to_numpy(dicom_folder, seg_path, output_path, patient_id):
     )
 
     # normalize and z-score image
-    image_array = preprocessing.z_score_image(preprocessing.normalize_image(image_array))
+    image_array = preprocessing.zscore_image(preprocessing.normalize_image(image_array))
 
     # create directory if it doesn't exist
     output_path_volume = f"{output_path}/mri_npy/{patient_id}/{patient_id}.npy"
